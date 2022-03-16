@@ -56,8 +56,11 @@ void loop() {
   
   }
   
-  if(header[2] == 195 && command_ready == true){
+  if(header[2] == 195){
     kit_anim();
+  }
+  else if(header[2] == 196){
+    warning_anim();
   }
   //Serial.println("done");
 }
@@ -84,18 +87,17 @@ void convert_header(){
   
 }
 
-void change_state(){
-  
-}
 
 void fadeall() { for(int i = 0; i < NUM_LEDS; i++) { leds[i].nscale8(110); } }
+
+void off() { for(int i = 0; i < NUM_LEDS; i++) { leds[i].nscale8(1); } }
 
 void kit_anim(){
     static uint8_t hue = 0;
   // First slide the led in one direction
   for(int i = 0; i < NUM_LEDS; i++) {
     // Set the i'th led to red 
-    leds[i] = CHSV(hue++, 255, 255);
+    leds[i] = CHSV(0, 255, 255);
     // Show the leds
     FastLED.show(); 
     // now that we've shown the leds, reset the i'th led to black
@@ -108,7 +110,7 @@ void kit_anim(){
   // Now go in the other direction.  
   for(int i = (NUM_LEDS)-1; i >= 0; i--) {
     // Set the i'th led to red 
-    leds[i] = CHSV(hue++, 255, 255);
+    leds[i] = CHSV(0, 255, 255);
     // Show the leds
     FastLED.show();
     // now that we've shown the leds, reset the i'th led to black
@@ -117,4 +119,37 @@ void kit_anim(){
     // Wait a little bit before we loop around and do it again
     delay(30);
   }
+}
+
+void warning_anim(){
+  // First slide the led in one direction
+  for(int i = 0; i < NUM_LEDS; i++) {
+    if(i % 2 == 0){
+      leds[i] = CHSV(64, 255, 255);
+    }
+  }
+    // Show the leds
+    FastLED.show(); 
+    // now that we've shown the leds, reset the i'th led to black
+    // leds[i] = CRGB::Black;
+    off();
+    // Wait a little bit before we loop around and do it again
+    delay(200);
+  
+
+   // First slide the led in one direction
+  for(int i = 0; i < NUM_LEDS; i++) {
+    if(i % 2 != 0){
+      leds[i] = CHSV(64, 255, 255);
+    }
+  }
+    // Show the leds
+    FastLED.show(); 
+    // now that we've shown the leds, reset the i'th led to black
+    // leds[i] = CRGB::Black;
+    off();
+    // Wait a little bit before we loop around and do it again
+    delay(200);
+  
+  
 }
