@@ -34,14 +34,15 @@ void setup() {
 
 
 void loop() {
-  off();
-  FastLED.show();
-  
   static State state = START;
-  static int anim_speed = 1;
-  static int color = 0;
-  static int brightness = BRIGHTNESS_VAL;
-  static int battery_life = 70;
+  static uint8_t anim_speed = 1;
+  static uint8_t color = 0;
+  static uint8_t brightness = BRIGHTNESS_VAL;
+  static uint8_t battery_life = 70;
+  static uint8_t _;
+  
+  off(_, _);
+  FastLED.show();
 
   memset(&header, 0, sizeof(header));
 
@@ -54,16 +55,17 @@ void loop() {
 
   switch (state) {
     case START:
+      demo_mode();
       break;
     case OFF:
-      off();
+      off(_, _);
       FastLED.show();
       break;
     case KITT:
       kitt_anim(anim_speed, color);
       break;
     case RAINBOW_KITT:
-      rainbow_kitt_anim(anim_speed);
+      rainbow_kitt_anim(anim_speed, _);
     case CAUTION:
       caution_anim(anim_speed, color);
       break;
@@ -97,12 +99,13 @@ void loop() {
       rainbow_fade(anim_speed, color);
       break;
     case BRIGHTNESS:
-      set_brightness(color);
+      set_brightness(anim_speed, _);
       break;
     case DEBUG:
-      debug_mode(color);
+      debug_mode(anim_speed, _);
       break;
     default:
+      demo_mode();
       break;
   }
 }
@@ -185,258 +188,44 @@ void parseHeader(State &state, byte header[], int &anim_speed, int &color) {
 }
 
 
-void center_out(uint8_t anim_speed, uint8_t color) {
-  for (int i = NUM_LEDS / 2; i >= 0; i--) {
-    leds[i] = CHSV(color / 10, 255, 255);
+// Declare the type of function pointers.
+// Here a function that takes two ints and returns an int.
+typedef void (*funptr) (uint8_t, uint8_t);
 
-  }
-}
-
-
-void fade(uint8_t anim_speed, uint8_t color) {
-  int temp_speed = 100 / anim_speed;
-  static int val = 0;
-  for (int i = 0; i < 256; i += 3) {
-    val += 3;
-    if (val > 255) {
-      val = 255;
-    }
-    for (int j = 0; j < NUM_LEDS; j++) {
-      leds[j] = CHSV(color, 255, val);
-      FastLED.show();
-    }
-  }
-  for (int i = 256; i > 0; i -= 5) {
-    val -= 5;
-    if (val < 0) {
-      val = 0;
-    }
-    for (int j = 0; j < NUM_LEDS; j++) {
-      leds[j] = CHSV(color, 255, val);
-      FastLED.show();
-    }
-  }
-  delay(temp_speed);
-}
-
-void rainbow_fade(uint8_t anim_speed, uint8_t color) {
-  static uint8_t hue = color;
-  int temp_speed = 100 / anim_speed;
-  static int val = 0;
-  for (int i = 0; i < 256; i += 3) {
-    val += 3;
-    if (val > 255) {
-      val = 255;
-    }
-    for (int j = 0; j < NUM_LEDS; j++) {
-      leds[j] = CHSV(hue, 255, val);
-      FastLED.show();
-      hue++;
-    }
-  }
-  for (int i = 256; i > 0; i -= 5) {
-    val -= 5;
-    if (val < 0) {
-      val = 0;
-    }
-    for (int j = 0; j < NUM_LEDS; j++) {
-      leds[j] = CHSV(hue, 255, val);
-      FastLED.show();
-      //delay(temp_speed);
-      hue--;
-    }
-  }
-  delay(temp_speed);
-}
+// The array with all the functions.
+funptr patterns[] = {
+    kitt_anim,
+    rainbow_kitt_anim,
+    caution_anim,
+    star,
+    triple_star,
+    rainbow_star,
+    rainbow_triple_star,
+    marquee,
+    rainbow_marquee,
+    middle_kitt_anim,
+    fade,
+    rainbow_fade,
+    debug_mode,
+};
 
 
-void star(uint8_t anim_speed, uint8_t color) {
-  int temp_speed = 300 / anim_speed;
-  leds[random(NUM_LEDS)] = CHSV(color, 255, 255);
+void demo_mode() {
+  static int i = 0;
+  patterns[i](random(5), random(255));
   FastLED.show();
-  delay(temp_speed);
-  fadeall();
-  delay(temp_speed);
-}
-
-void single_star(uint8_t anim_speed, uint8_t color) {
-  int temp_speed = 300 / anim_speed;
-  int i = random(NUM_LEDS);
-  int rainbow = random(255);
-  //leds[i] = CHSV(random(255), 255, 255);
-
-  for (int x = 0; x < 255; x++) {
-    leds[i] = CHSV(color, 255, x);
-    FastLED.show();
-
-  }
-  for (int x = 255; x >= 0; x--) {
-    leds[i] = CHSV(color, 255, x);
-    FastLED.show();
-
-  }
+  i = (i + 1) % 13;
 }
 
 
-void rainbow_triple_star(uint8_t anim_speed, uint8_t color) {
-  int temp_speed = 300 / anim_speed;
-  int num1 = random(NUM_LEDS);
-  int num2 = random(NUM_LEDS);
-  int num3 = random(NUM_LEDS);
-  int rainbow = random(255);
-  //leds[i] = CHSV(random(255), 255, 255);
-
-  for (int x = 0; x < 255; x++) {
-    leds[num1] = CHSV(rainbow, 255, x);
-    leds[num2] = CHSV(rainbow, 255, x);
-    leds[num3] = CHSV(rainbow, 255, x);
-    FastLED.show();
-
-  }
-  for (int x = 255; x >= 0; x--) {
-    leds[num1] = CHSV(rainbow, 255, x);
-    leds[num2] = CHSV(rainbow, 255, x);
-    leds[num3] = CHSV(rainbow, 255, x);
-    FastLED.show();
-
-  }
-}
-
-void triple_star(uint8_t anim_speed, uint8_t color) {
-  int temp_speed = 300 / anim_speed;
-  int num1 = random(NUM_LEDS);
-  int num2 = random(NUM_LEDS);
-  int num3 = random(NUM_LEDS);
-  int rainbow = random(255);
-  //leds[i] = CHSV(random(255), 255, 255);
-
-  for (int x = 0; x < 255; x++) {
-    leds[num1] = CHSV(color, 255, x);
-    leds[num2] = CHSV(color, 255, x);
-    leds[num3] = CHSV(color, 255, x);
-    FastLED.show();
-
-  }
-  for (int x = 255; x >= 0; x--) {
-    leds[num1] = CHSV(color, 255, x);
-    leds[num2] = CHSV(color, 255, x);
-    leds[num3] = CHSV(color, 255, x);
-    FastLED.show();
-
-  }
-}
-void rainbow_single_star(uint8_t anim_speed, uint8_t color) {
-  int temp_speed = 300 / anim_speed;
-  int i = random(NUM_LEDS);
-  int rainbow = random(255);
-  //leds[i] = CHSV(random(255), 255, 255);
-
-  for (int x = 0; x < 255; x++) {
-    leds[i] = CHSV(rainbow, 255, x);
-    FastLED.show();
-
-  }
-  for (int x = 255; x >= 0; x--) {
-    leds[i] = CHSV(rainbow, 255, x);
-    FastLED.show();
-
-  }
-}
-
-
-void rainbow_star(uint8_t anim_speed, uint8_t color) {
-  int temp_speed = 300 / anim_speed;
-  leds[random(NUM_LEDS)] = CHSV(random(255), 255, 255);
-  FastLED.show();
-  delay(temp_speed);
-  fadeall();
-  delay(temp_speed);
-}
-
-
-void set_brightness(uint8_t brightness) {
-    FastLED.setBrightness(brightness);
-    FastLED.show();
-}
-
-
-void debug_mode(uint8_t battery_life) {
-  int battery = int(battery_life) / 10;
-  for (int i = 0; i < battery; i++) {
-    leds[i] = CHSV(92, 255, 255);
-    FastLED.show();
-  }
-}
-
-
-void triple_rainbow_star(uint8_t anim_speed, uint8_t color) {
-  int index = random(NUM_LEDS);
-  int hue = random(color);
-  int temp_speed = 300 / anim_speed;
-  off();
-  leds[index] = CHSV(hue, 255, 255);
-  index = (index + 1) % NUM_LEDS;
-  leds[index] = CHSV(hue, 255, 255);
-  index = (index + 1) % NUM_LEDS;
-  leds[index] = CHSV(hue, 255, 255);
-  FastLED.show();
-  delay(temp_speed);
-  off();
-  delay(temp_speed);
-}
-
-
-void marquee(uint8_t anim_speed, uint8_t color) {
-  int temp_speed = 100 / anim_speed;
-  for (int i = 0; i < 10; i++) {
-    for (int j = 0; j < 3; j++) {
-      for (int k = 0; k < NUM_LEDS; k += 3) {
-        leds[j + k] = CHSV(color, 255, 255);
-      }
-      FastLED.show();
-      delay(temp_speed);
-
-      for (int k = 0; k < NUM_LEDS; k += 3) {
-        leds[j + k] = CHSV(color, 0, 0);
-      }
-    }
-  }
-}
-
-void rainbow_marquee(uint8_t anim_speed, uint8_t color) {
-  static uint8_t hue = color;
-  int temp_speed = 100 / anim_speed;
-  for (int i = 0; i < 10; i++) {
-    for (int j = 0; j < 3; j++) {
-      for (int k = 0; k < NUM_LEDS; k += 3) {
-        leds[j + k] = CHSV(hue, 255, 255);
-      }
-      FastLED.show();
-      delay(temp_speed);
-      hue = (hue + 1) % 255;
-
-      for (int k = 0; k < NUM_LEDS; k += 3) {
-        leds[j + k] = CHSV(hue, 0, 0);
-      }
-    }
-  }
-}
-
-
-void fadeall() {
-  for (int i = 0; i < NUM_LEDS; i++) {
-    leds[i].nscale8(110);
-  }
-}
-
-
-void off() {
+void off(uint8_t anim_speed, uint8_t color) {
   for (int i = 0; i < NUM_LEDS; i++) {
     leds[i].nscale8(1);
   }
 }
 
-void kitt_anim(int anim_speed, int color) {
+
+void kitt_anim(uint8_t anim_speed, uint8_t color) {
   static uint8_t hue = 0;
   int temp_speed = 100 / anim_speed;
   // First slide the led in one direction
@@ -465,6 +254,181 @@ void kitt_anim(int anim_speed, int color) {
     delay(temp_speed);
   }
 }
+
+
+void rainbow_kitt_anim(uint8_t anim_speed, uint8_t color) {
+  static uint8_t hue = 0;
+  int temp_speed = 100 / anim_speed;
+  // First slide the led in one direction
+  for (int i = 0; i < NUM_LEDS; i++) {
+    // Set the i'th led to red
+    leds[i] = CHSV(hue, 255, 255);
+    // Show the leds
+    FastLED.show();
+    // now that we've shown the leds, reset the i'th led to black
+    // leds[i] = CRGB::Black;
+    fadeall();
+    // Wait a little bit before we loop around and do it again
+    delay(temp_speed);
+    hue++;
+  }
+
+  // Now go in the other direction.
+  for (int i = (NUM_LEDS) - 1; i >= 0; i--) {
+    // Set the i'th led to red
+    leds[i] = CHSV(hue, 255, 255);
+    // Show the leds
+    FastLED.show();
+    // now that we've shown the leds, reset the i'th led to black
+    // leds[i] = CRGB::Black;
+    fadeall();
+    // Wait a little bit before we loop around and do it again
+    delay(temp_speed);
+    hue++;
+  }
+}
+
+
+void caution_anim(uint8_t anim_speed, uint8_t color) {
+  uint8_t _;
+  int temp_speed = 400 / anim_speed;
+  // First slide the led in one direction
+  for (int i = 0; i < NUM_LEDS; i++) {
+    if (i % 2 == 0) {
+      leds[i] = CHSV(color, 255, 255);
+    }
+  }
+  // Show the leds
+  FastLED.show();
+  // now that we've shown the leds, reset the i'th led to black
+  // leds[i] = CRGB::Black;
+  off(_, _);
+  // Wait a little bit before we loop around and do it again
+  delay(temp_speed);
+
+  // First slide the led in one direction
+  for (int i = 0; i < NUM_LEDS; i++) {
+    if (i % 2 != 0) {
+      leds[i] = CHSV(color, 255, 255);
+    }
+  }
+  // Show the leds
+  FastLED.show();
+  // now that we've shown the leds, reset the i'th led to black
+  // leds[i] = CRGB::Black;
+  off(_, _);
+  // Wait a little bit before we loop around and do it again
+  delay(temp_speed);
+}
+
+
+void star(uint8_t anim_speed, uint8_t color) {
+  int temp_speed = 300 / anim_speed;
+  leds[random(NUM_LEDS)] = CHSV(color, 255, 255);
+  FastLED.show();
+  delay(temp_speed);
+  fadeall();
+  delay(temp_speed);
+}
+
+
+void triple_star(uint8_t anim_speed, uint8_t color) {
+  int temp_speed = 300 / anim_speed;
+  int num1 = random(NUM_LEDS);
+  int num2 = random(NUM_LEDS);
+  int num3 = random(NUM_LEDS);
+  int rainbow = random(255);
+  //leds[i] = CHSV(random(255), 255, 255);
+
+  for (int x = 0; x < 255; x++) {
+    leds[num1] = CHSV(color, 255, x);
+    leds[num2] = CHSV(color, 255, x);
+    leds[num3] = CHSV(color, 255, x);
+    FastLED.show();
+
+  }
+  for (int x = 255; x >= 0; x--) {
+    leds[num1] = CHSV(color, 255, x);
+    leds[num2] = CHSV(color, 255, x);
+    leds[num3] = CHSV(color, 255, x);
+    FastLED.show();
+
+  }
+}
+
+
+void rainbow_star(uint8_t anim_speed, uint8_t color) {
+  int temp_speed = 300 / anim_speed;
+  leds[random(NUM_LEDS)] = CHSV(random(255), 255, 255);
+  FastLED.show();
+  delay(temp_speed);
+  fadeall();
+  delay(temp_speed);
+}
+
+
+void rainbow_triple_star(uint8_t anim_speed, uint8_t color) {
+  int temp_speed = 300 / anim_speed;
+  int num1 = random(NUM_LEDS);
+  int num2 = random(NUM_LEDS);
+  int num3 = random(NUM_LEDS);
+  int rainbow = random(255);
+  //leds[i] = CHSV(random(255), 255, 255);
+
+  for (int x = 0; x < 255; x++) {
+    leds[num1] = CHSV(rainbow, 255, x);
+    leds[num2] = CHSV(rainbow, 255, x);
+    leds[num3] = CHSV(rainbow, 255, x);
+    FastLED.show();
+
+  }
+  for (int x = 255; x >= 0; x--) {
+    leds[num1] = CHSV(rainbow, 255, x);
+    leds[num2] = CHSV(rainbow, 255, x);
+    leds[num3] = CHSV(rainbow, 255, x);
+    FastLED.show();
+
+  }
+}
+
+
+void marquee(uint8_t anim_speed, uint8_t color) {
+  int temp_speed = 100 / anim_speed;
+  for (int i = 0; i < 10; i++) {
+    for (int j = 0; j < 3; j++) {
+      for (int k = 0; k < NUM_LEDS; k += 3) {
+        leds[j + k] = CHSV(color, 255, 255);
+      }
+      FastLED.show();
+      delay(temp_speed);
+
+      for (int k = 0; k < NUM_LEDS; k += 3) {
+        leds[j + k] = CHSV(color, 0, 0);
+      }
+    }
+  }
+}
+
+
+void rainbow_marquee(uint8_t anim_speed, uint8_t color) {
+  static uint8_t hue = color;
+  int temp_speed = 100 / anim_speed;
+  for (int i = 0; i < 10; i++) {
+    for (int j = 0; j < 3; j++) {
+      for (int k = 0; k < NUM_LEDS; k += 3) {
+        leds[j + k] = CHSV(hue, 255, 255);
+      }
+      FastLED.show();
+      delay(temp_speed);
+      hue = (hue + 1) % 255;
+
+      for (int k = 0; k < NUM_LEDS; k += 3) {
+        leds[j + k] = CHSV(hue, 0, 0);
+      }
+    }
+  }
+}
+
 
 void middle_kitt_anim(int anim_speed, int color) {
   static uint8_t hue = 0;
@@ -509,65 +473,147 @@ void middle_kitt_anim(int anim_speed, int color) {
 }
 
 
-void rainbow_kitt_anim(int anim_speed) {
-  static uint8_t hue = 0;
+void fade(uint8_t anim_speed, uint8_t color) {
   int temp_speed = 100 / anim_speed;
-  // First slide the led in one direction
-  for (int i = 0; i < NUM_LEDS; i++) {
-    // Set the i'th led to red
-    leds[i] = CHSV(hue, 255, 255);
-    // Show the leds
-    FastLED.show();
-    // now that we've shown the leds, reset the i'th led to black
-    // leds[i] = CRGB::Black;
-    fadeall();
-    // Wait a little bit before we loop around and do it again
-    delay(temp_speed);
-    hue++;
+  static int val = 0;
+  for (int i = 0; i < 256; i += 3) {
+    val += 3;
+    if (val > 255) {
+      val = 255;
+    }
+    for (int j = 0; j < NUM_LEDS; j++) {
+      leds[j] = CHSV(color, 255, val);
+      FastLED.show();
+    }
   }
+  for (int i = 256; i > 0; i -= 5) {
+    val -= 5;
+    if (val < 0) {
+      val = 0;
+    }
+    for (int j = 0; j < NUM_LEDS; j++) {
+      leds[j] = CHSV(color, 255, val);
+      FastLED.show();
+    }
+  }
+  delay(temp_speed);
+}
 
-  // Now go in the other direction.
-  for (int i = (NUM_LEDS) - 1; i >= 0; i--) {
-    // Set the i'th led to red
-    leds[i] = CHSV(hue, 255, 255);
-    // Show the leds
+
+void rainbow_fade(uint8_t anim_speed, uint8_t color) {
+  static uint8_t hue = color;
+  int temp_speed = 100 / anim_speed;
+  static int val = 0;
+  for (int i = 0; i < 256; i += 3) {
+    val += 3;
+    if (val > 255) {
+      val = 255;
+    }
+    for (int j = 0; j < NUM_LEDS; j++) {
+      leds[j] = CHSV(hue, 255, val);
+      FastLED.show();
+      hue++;
+    }
+  }
+  for (int i = 256; i > 0; i -= 5) {
+    val -= 5;
+    if (val < 0) {
+      val = 0;
+    }
+    for (int j = 0; j < NUM_LEDS; j++) {
+      leds[j] = CHSV(hue, 255, val);
+      FastLED.show();
+      //delay(temp_speed);
+      hue--;
+    }
+  }
+  delay(temp_speed);
+}
+
+
+void set_brightness(uint8_t brightness, uint8_t color) {
+  FastLED.setBrightness(brightness);
+  FastLED.show();
+}
+
+
+void debug_mode(uint8_t battery_life, uint8_t color) {
+  int battery = int(battery_life) / 10;
+  for (int i = 0; i < battery; i++) {
+    leds[i] = CHSV(92, 255, 255);
     FastLED.show();
-    // now that we've shown the leds, reset the i'th led to black
-    // leds[i] = CRGB::Black;
-    fadeall();
-    // Wait a little bit before we loop around and do it again
-    delay(temp_speed);
-    hue++;
   }
 }
 
-void caution_anim(int anim_speed, int color) {
-  int temp_speed = 400 / anim_speed;
-  // First slide the led in one direction
-  for (int i = 0; i < NUM_LEDS; i++) {
-    if (i % 2 == 0) {
-      leds[i] = CHSV(color, 255, 255);
-    }
-  }
-  // Show the leds
-  FastLED.show();
-  // now that we've shown the leds, reset the i'th led to black
-  // leds[i] = CRGB::Black;
-  off();
-  // Wait a little bit before we loop around and do it again
-  delay(temp_speed);
 
-  // First slide the led in one direction
+// helper function
+void fadeall() {
   for (int i = 0; i < NUM_LEDS; i++) {
-    if (i % 2 != 0) {
-      leds[i] = CHSV(color, 255, 255);
-    }
+    leds[i].nscale8(110);
   }
-  // Show the leds
+}
+
+
+// currently unused
+void center_out(uint8_t anim_speed, uint8_t color) {
+  for (int i = NUM_LEDS / 2; i >= 0; i--) {
+    leds[i] = CHSV(color / 10, 255, 255);
+
+  }
+}
+
+
+void single_star(uint8_t anim_speed, uint8_t color) {
+  int temp_speed = 300 / anim_speed;
+  int i = random(NUM_LEDS);
+  int rainbow = random(255);
+  //leds[i] = CHSV(random(255), 255, 255);
+
+  for (int x = 0; x < 255; x++) {
+    leds[i] = CHSV(color, 255, x);
+    FastLED.show();
+
+  }
+  for (int x = 255; x >= 0; x--) {
+    leds[i] = CHSV(color, 255, x);
+    FastLED.show();
+
+  }
+}
+
+
+void rainbow_single_star(uint8_t anim_speed, uint8_t color) {
+  int temp_speed = 300 / anim_speed;
+  int i = random(NUM_LEDS);
+  int rainbow = random(255);
+  //leds[i] = CHSV(random(255), 255, 255);
+
+  for (int x = 0; x < 255; x++) {
+    leds[i] = CHSV(rainbow, 255, x);
+    FastLED.show();
+
+  }
+  for (int x = 255; x >= 0; x--) {
+    leds[i] = CHSV(rainbow, 255, x);
+    FastLED.show();
+
+  }
+}
+
+
+void triple_rainbow_star(uint8_t anim_speed, uint8_t color) {
+  uint8_t _;
+  int index = random(NUM_LEDS);
+  int hue = random(color);
+  int temp_speed = 300 / anim_speed;
+  off(_, _);
+  leds[index] = CHSV(hue, 255, 255);
+  index = (index + 1) % NUM_LEDS;
+  leds[index] = CHSV(hue, 255, 255);
+  index = (index + 1) % NUM_LEDS;
+  leds[index] = CHSV(hue, 255, 255);
   FastLED.show();
-  // now that we've shown the leds, reset the i'th led to black
-  // leds[i] = CRGB::Black;
-  off();
-  // Wait a little bit before we loop around and do it again
+  delay(temp_speed);
+  off(_, _);
   delay(temp_speed);
 }
