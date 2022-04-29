@@ -30,6 +30,7 @@ void setup() {
   FastLED.setBrightness(BRIGHTNESS_VAL);
   Serial.begin(57600);
   COM.begin(57600);
+  randomSeed(analogRead(A0));
 }
 
 
@@ -111,7 +112,7 @@ void loop() {
 }
 
 
-void parseHeader(State &state, byte header[], int &anim_speed, int &color) {
+void parseHeader(State &state, byte header[], uint8_t &anim_speed, uint8_t &color) {
   if (header[0] == 0xFF) {
     if (header[1] == 0x01) {
       //Get Pattern
@@ -212,7 +213,9 @@ funptr patterns[] = {
 
 void demo_mode() {
   static int i = 0;
-  patterns[i](random(5), random(255));
+  for (int j = 0; j < random(2, 6); j++) {
+    patterns[i](random(5), random(255));
+  }
   FastLED.show();
   i = (i + 1) % 13;
 }
