@@ -31,6 +31,7 @@ void setup() {
   Serial.begin(57600);
   COM.begin(57600);
   randomSeed(analogRead(A0));
+  delay(5000);
 }
 
 
@@ -43,7 +44,6 @@ void loop() {
   static uint8_t _;
   
   off(_, _);
-  FastLED.show();
 
   memset(&header, 0, sizeof(header));
 
@@ -60,7 +60,6 @@ void loop() {
       break;
     case OFF:
       off(_, _);
-      FastLED.show();
       break;
     case KITT:
       kitt_anim(anim_speed, color);
@@ -212,18 +211,18 @@ funptr patterns[] = {
 
 
 void demo_mode() {
-  static int i = 0;
-  for (int j = 0; j < random(2, 6); j++) {
-    patterns[i](random(5), random(255));
+  unsigned long cur_time = millis();
+  while(millis() < cur_time + 5000) {
+    patterns[random(13)](random(5), random(255));
   }
-  FastLED.show();
-  i = (i + 1) % 13;
+  off(0, 0);
 }
 
 
 void off(uint8_t anim_speed, uint8_t color) {
   for (int i = 0; i < NUM_LEDS; i++) {
-    leds[i].nscale8(1);
+    leds[i] = CHSV(0, 0, 0);
+    FastLED.show();
   }
 }
 
