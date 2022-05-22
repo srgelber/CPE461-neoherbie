@@ -50,7 +50,7 @@ void loop() {
   if(first_run == 1){
     unsigned long cur_time = millis();
     while(millis() < cur_time + 5000) {
-      if (COM.available() > 3) {
+      if (COM.available()) {
         for (int i = 0; i < 4; i++) {
           header[i] = COM.read();
         }
@@ -60,7 +60,7 @@ void loop() {
     }
     first_run = 0;
   }else{
-      if (COM.available() > 3) {
+      if (COM.available()) {
         for (int i = 0; i < 4; i++) {
           header[i] = COM.read();
         }
