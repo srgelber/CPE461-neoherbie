@@ -46,6 +46,10 @@ void loop() {
   static uint8_t _;
   static uint8_t first_run = 1;
 
+  if (state != DEBUG) {
+    off();
+  }
+
   memset(&header, 0, sizeof(header));
   if(first_run == 1){
     unsigned long cur_time = millis();
