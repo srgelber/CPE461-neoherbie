@@ -31,7 +31,9 @@ void setup() {
   Serial.begin(57600);
   COM.begin(57600);
   randomSeed(analogRead(A0));
+  off();
   delay(5000);
+  
 }
 
 
@@ -43,8 +45,6 @@ void loop() {
   static uint8_t battery_life = 70;
   static uint8_t _;
   static uint8_t first_run = 1;
-  
-  off(_, _);
 
   memset(&header, 0, sizeof(header));
   if(first_run == 1){
@@ -73,13 +73,14 @@ void loop() {
       demo_mode();
       break;
     case OFF:
-      off(_, _);
+      off();
       break;
     case KITT:
       kitt_anim(anim_speed, color);
       break;
     case RAINBOW_KITT:
       rainbow_kitt_anim(anim_speed, _);
+      break;
     case CAUTION:
       caution_anim(anim_speed, color);
       break;
@@ -105,6 +106,7 @@ void loop() {
       middle_kitt_anim(anim_speed, color);
       break;
     case RAINBOW_CENTER_OUT:
+      rainbow_middle_kitt_anim(anim_speed, color);
       break;
     case FADE:
       fade(anim_speed, color);
@@ -113,10 +115,10 @@ void loop() {
       rainbow_fade(anim_speed, color);
       break;
     case BRIGHTNESS:
-      set_brightness(anim_speed, _);
+      set_brightness(_, color);
       break;
     case DEBUG:
-      debug_mode(anim_speed, _);
+      debug_mode(_, color);
       break;
     default:
       demo_mode();
@@ -218,6 +220,7 @@ funptr patterns[] = {
     marquee,
     rainbow_marquee,
     middle_kitt_anim,
+    rainbow_middle_kitt_anim,
     fade,
     rainbow_fade,
     debug_mode,
@@ -227,14 +230,13 @@ funptr patterns[] = {
 void demo_mode() {
   unsigned long cur_time = millis();
   while(millis() < cur_time + 5000) {
-    patterns[random(13)](1, random(255));
-    off(0, 0);
+    patterns[random(14)](1, random(255));
+    off();
   }
-  
 }
 
 
-void off(uint8_t anim_speed, uint8_t color) {
+void off() {
   for (int i = 0; i < NUM_LEDS; i++) {
     leds[i] = CHSV(0, 0, 0);
     FastLED.show();
@@ -321,7 +323,7 @@ void caution_anim(uint8_t anim_speed, uint8_t color) {
     // now that we've shown the leds, reset the i'th led to black
     // leds[i] = CRGB::Black;
     delay(temp_speed);
-    off(_, _);
+    off();
     // Wait a little bit before we loop around and do it again
     // First slide the led in one direction
     for (int i = 0; i < NUM_LEDS; i++) {
@@ -334,7 +336,7 @@ void caution_anim(uint8_t anim_speed, uint8_t color) {
     // now that we've shown the leds, reset the i'th led to black
     // leds[i] = CRGB::Black;
     delay(temp_speed);
-    off(_, _);
+    off();
     // Wait a little bit before we loop around and do it again
    }
 }
@@ -499,6 +501,51 @@ void middle_kitt_anim(int anim_speed, int color) {
 }
 
 
+void rainbow_middle_kitt_anim(int anim_speed, int color) {
+  static uint8_t hue = color;
+  int temp_speed = 85 / anim_speed;
+  int i = 0;
+  int left = 4;
+  int right = 4;
+  // First slide the led in one direction
+  while (i < 4) {
+    // Set the i'th led to red
+    leds[left] = CHSV(hue, 255, 255);
+    leds[right] = CHSV(hue, 255, 255);
+    // Show the leds
+    FastLED.show();
+    // now that we've shown the leds, reset the i'th led to black
+    // leds[i] = CRGB::Black;
+    fadeall();
+    // Wait a little bit before we loop around and do it again
+    delay(temp_speed);
+    left--;
+    right++;
+    i++;
+    hue++;
+  }
+
+  int j = 0;
+  // Now go in the other direction.
+  while (j < 4) {
+    // Set the i'th led to red
+    leds[left] = CHSV(hue, 255, 255);
+    leds[right] = CHSV(hue, 255, 255);
+    // Show the leds
+    FastLED.show();
+    // now that we've shown the leds, reset the i'th led to black
+    // leds[i] = CRGB::Black;
+    fadeall();
+    // Wait a little bit before we loop around and do it again
+    delay(temp_speed);
+    left++;
+    right--;
+    j++;
+    hue++;
+  }
+}
+
+
 void fade(uint8_t anim_speed, uint8_t color) {
   int temp_speed = 100 / anim_speed;
   static int val = 0;
@@ -557,18 +604,18 @@ void rainbow_fade(uint8_t anim_speed, uint8_t color) {
 }
 
 
-void set_brightness(uint8_t brightness, uint8_t color) {
+void set_brightness(uint8_t _, uint8_t brightness) {
   FastLED.setBrightness(brightness);
   FastLED.show();
 }
 
 
-void debug_mode(uint8_t battery_life, uint8_t color) {
-  int battery = int(battery_life) / 10;
+void debug_mode(uint8_t _, uint8_t battery_life) {
+  int battery = int(battery_life / 10);
   for (int i = 0; i < battery; i++) {
     leds[i] = CHSV(92, 255, 255);
-    FastLED.show();
   }
+  FastLED.show();
 }
 
 
@@ -632,7 +679,7 @@ void triple_rainbow_star(uint8_t anim_speed, uint8_t color) {
   int index = random(NUM_LEDS);
   int hue = random(color);
   int temp_speed = 300 / anim_speed;
-  off(_, _);
+  off();
   leds[index] = CHSV(hue, 255, 255);
   index = (index + 1) % NUM_LEDS;
   leds[index] = CHSV(hue, 255, 255);
@@ -640,6 +687,6 @@ void triple_rainbow_star(uint8_t anim_speed, uint8_t color) {
   leds[index] = CHSV(hue, 255, 255);
   FastLED.show();
   delay(temp_speed);
-  off(_, _);
+  off();
   delay(temp_speed);
 }
